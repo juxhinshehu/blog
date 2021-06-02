@@ -1,23 +1,46 @@
 @extends('layouts.app')
 
 @section('content')
-<div class="container">
-    <div class="row justify-content-center">
-        <div class="col-md-8">
-            <div class="card">
-                <div class="card-header">Dashboard</div>
+    <style>
+        .uper {
+            margin-top: 40px;
+        }
+    </style>
 
-                <div class="card-body">
-                    @if (session('status'))
-                        <div class="alert alert-success" role="alert">
-                            {{ session('status') }}
-                        </div>
-                    @endif
-
-                    You are logged in!
-                </div>
+    <div class="card uper">
+        @if (Auth::check())
+            <div class="card-header">
+                <a class="btn btn-primary" href="{{ route('posts.create') }}"> Create New Post</a>
             </div>
+        @endif
+
+        <div class="card-body">
+            @if(session()->get('success'))
+                <div class="alert alert-success">
+                    {{ session()->get('success') }}
+                </div><br />
+            @endif
+            <table class="table table-striped">
+                <thead>
+                <tr>
+                    <td>ID</td>
+                    <td>Post Title</td>
+                    <td>Post Body</td>
+                    <td colspan="3">Action</td>
+                </tr>
+                </thead>
+                <tbody>
+                @foreach($posts as $post)
+                    <tr>
+                        <td>{{$post->id}}</td>
+                        <td>{{$post->title}}</td>
+                        <td>{{$post->body}}</td>
+                        <td><a class="btn btn-primary" href="{{ route('post',$post->id) }}">Show</a></td>
+                    </tr>
+                @endforeach
+                </tbody>
+            </table>
         </div>
     </div>
-</div>
+
 @endsection

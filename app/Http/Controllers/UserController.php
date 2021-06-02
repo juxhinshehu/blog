@@ -3,10 +3,11 @@
 namespace App\Http\Controllers;
 
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Hash;
 use Illuminate\Support\Facades\Auth;
-use App\Post;
+use App\User;
 
-class PostController extends Controller
+class UserController extends Controller
 {
     /**
      * Create a new controller instance.
@@ -17,6 +18,7 @@ class PostController extends Controller
     {
         $this->middleware('auth');
     }
+
     /**
      * Display a listing of the resource.
      *
@@ -24,13 +26,13 @@ class PostController extends Controller
      */
     public function index()
     {
-        if (Auth::user()->creator == 0) { 
-            $posts = Post::all();
-        } else { 
-            $posts = Post::where('creator', '=', Auth::user()->id)->get();
+        if (Auth::user()->creator == 0) {
+            $users = User::all();
+        } else {
+            $users = User::where('creator', '=', Auth::user()->id)->get();
         }
 
-        return view('posts.index', compact('posts'));
+        return view('users.index', compact('users'));
     }
 
     /**
@@ -40,7 +42,7 @@ class PostController extends Controller
      */
     public function create()
     {
-        return view('posts.create');
+        return view('users.create');
     }
 
     /**
@@ -52,20 +54,20 @@ class PostController extends Controller
     public function store(Request $request)
     {
         $request->validate([
-            'title' => 'required|max:255',
-            'body' => 'required',
+            'name' => 'required|max:30',
+            'email' => 'required|unique:users|max:30|email',
+            'password' => 'required|min:6|max:30',
         ]);
         
-        $post = new Post();
-        $data = $request->all();
+        $user = new User();
+        $user->name = $request->get('name');
+        $user->email = $request->get('email');
+        $user->password = Hash::make($request->get('password'));
+        $user->creator = Auth::user()->id;
 
-        $post->title = $request->get('title');
-        $post->body = $request->get('body');
-        $post->creator = Auth::user()->id;
+        $user->save();
 
-        $post->save();
-
-        return redirect()->route('posts.index')->with('success','Post created successfully.');
+        return redirect()->route('users.index')->with('success','User created successfully.');
     }
 
     /**
@@ -76,8 +78,8 @@ class PostController extends Controller
      */
     public function show($id)
     {
-        $post = Post::find($id);
-        return view('posts.show', compact('post'));
+        $user = User::find($id);
+        return view('users.show', compact('user'));
     }
 
     /**
@@ -88,8 +90,8 @@ class PostController extends Controller
      */
     public function edit($id)
     {
-        $post = Post::find($id);
-        return view('posts.edit',compact('post'));
+        $user = User::find($id);
+        return view('users.edit',compact('user'));
     }
 
     /**
@@ -102,21 +104,22 @@ class PostController extends Controller
     public function update(Request $request, $id)
     {
         $request->validate([
-            'title' => 'required|max:255',
-            'body' => 'required'
+            'name' => 'required|max:30',
+            'email' => 'max:30|email',
+            'password' => 'required|min:6|max:30',
         ]);
 
-        $post = Post::find($id);
+        $user = User::find($id);
 
-        // if authenticated user is the creator or the admin only then allowed 
-        if (Auth::user()->id == $post->creator || Auth::user()->creator == 0) {
-            $post->title = $request->get('title');
-            $post->body = $request->get('body');
-            $post->save();
-            
-            return redirect('/posts')->with('success', 'Post has been updated');
-        } 
-        
+        // if authenticated user is the creator or the admin only then allow to update
+        if (Auth::user()->id == $user->creator || Auth::user()->creator == 0) {
+            $user->name = $request->get('name');
+            $user->email = $request->get('email');
+            $user->password = Hash::make($request->get('password'));
+
+            return redirect('/users')->with('success', 'User has been updated');
+        }
+
         return response("Unauthorized", 401);
     }
 
@@ -128,16 +131,15 @@ class PostController extends Controller
      */
     public function destroy($id)
     {
-        $post = Post::find($id);
+        $user = User::find($id);
 
         // if authenticated user is the creator or the admin only then allowed 
-        if (Auth::user()->id == $post->creator || Auth::user()->creator == 0) {
-            $post->delete();
-
-            return redirect('/posts')->with('success', 'Post has been deleted');
+        if (Auth::user()->id == $user->creator || Auth::user()->creator == 0) {
+            $user->delete();
+            
+            return redirect('/users')->with('success', 'User has been deleted');
         }
 
         return response("Unauthorized", 401);
-
     }
 }
